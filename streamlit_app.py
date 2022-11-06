@@ -1,7 +1,10 @@
+import datetime
+from bokeh.plotting import figure, curdoc
 from PIL import Image
 import inspect
 import textwrap
 from urllib.error import URLError
+import numpy as np
 
 import pandas as pd
 import pydeck as pdk
@@ -70,7 +73,7 @@ def mapping_demo():
         LAND_COVER = [[[-123.0, 49.196], [-123.0, 49.324],[-123.306, 49.324], [-123.306, 49.196]]]
 
         ALL_LAYERS = {
-            "Area hydrologic": pdk.Layer(
+            "Example dataset": pdk.Layer(
                 "PolygonLayer",
                 data=df,
                 id="geojson",
@@ -116,13 +119,78 @@ def mapping_demo():
         )
 
 
-st.set_page_config(page_title="Cropernicus Dashboard", page_icon="🌍", layout="wide")
-#st.markdown("# Cropernicus Dashboard")
-image = Image.open('img/logo.png')
+### Bokeh
+y = np.random.rand(200)
 
-st.image(image)
-st.write(
-    """This demo shows how to use the agroboad terminal to check for crop predictions over time."""
+y_2 = np.random.rand(200)
+
+start = datetime.datetime.strptime("21-06-2017", "%d-%m-%Y")
+dates = [start]
+for _ in y:
+    new_date = dates[-1] + datetime.timedelta(days=6)
+    dates.append(new_date)
+
+p = figure(
+    title='Index Average of selected crops',
+    x_axis_label='Date',
+    y_axis_label='Index value', 
+    height=250, toolbar_location="above", x_axis_type="datetime")
+
+p.line(dates, y, legend_label='NDWI', line_width=1, color="green")
+
+p.line(dates, y_2, legend_label='NDMI', line_width=1, color="red")
+
+
+doc = curdoc()
+doc.theme = 'night_sky'
+doc.add_root(p)
+
+#### Streamlit app
+st.set_page_config(page_title="Cropernicus Dashboard", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
+
+## Sidebar
+st.sidebar.image('img/datafrom.jpg', width=300)
+
+st.sidebar.markdown("# Cropernicus Dashboard")
+st.sidebar.write(
+    """Commodity traders, seed and fertilizer industry forecast the yield/necessities of any crop production based on local state-owned agencies’ monthly reports. 
+
+For example: an industry commodity leader, Archer Daniels Midlands, on their weekly report, needs to digest USDA’s National Agricultural Statistics Service’s monthly crop predictions, based on past rainfall. 
+
+Our solution predicts crop production using satellite data, providing daily updated information about any given area and commodity. 
+
+Scientific literature and our early machine learning model show a good correlation between Sentinel-2 data, water availability and past crop yields. We are training our model to forecast production based on this newly-available technology. 
+
+Our competitive advantage is giving independent real-time future yield predictions to stakeholders in an easy-to-consume way."""
+
 )
 
+
+## Main Content
+#st.markdown("# Cropernicus Dashboard")
+image = Image.open('img/logo.png')
+st.image(image, width=500)
+st.write(
+    """This demo shows how to use the cropernicus dashboard to check for crop yield forecast over time."""
+)
+
+image2 = Image.open('img/colormap2.png')
+st.image(image2, width=200)
+
 mapping_demo()
+
+st.markdown("Here you can find related indices extracted from Sentinel-2 products.")
+
+st.bokeh_chart(p, use_container_width=True)
+
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
+# st.markdown("[Cropernicus.com]()")
