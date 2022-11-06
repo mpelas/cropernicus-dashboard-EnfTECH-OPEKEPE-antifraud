@@ -95,9 +95,9 @@ def mapping_demo():
                 pdk.Deck(
                     map_style="mapbox://styles/mapbox/light-v9",
                     initial_view_state={
-                        "latitude": 37.76,
-                        "longitude": -122.4,
-                        "zoom": 11
+                        "latitude": 35,
+                        "longitude": -106,
+                        "zoom": 5
                     },
                     layers=selected_layers,
                 )
