@@ -24,7 +24,8 @@ def mapping_demo():
         #     "http://raw.githubusercontent.com/streamlit/"
         #     "example-data/master/hello/v1/%s" % filename
         # )
-        DATA_URL = "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/geojson/vancouver-blocks.json"
+        #DATA_URL = "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/geojson/vancouver-blocks.json"
+        DATA_URL = "data/crops.json"
         json = pd.read_json(DATA_URL)
 
         return json
@@ -62,20 +63,27 @@ def mapping_demo():
         df = pd.DataFrame()
         # Parse the geometry out in Pandas
         df["coordinates"] = json["features"].apply(lambda row: row["geometry"]["coordinates"])
-        df["valuePerSqm"] = json["features"].apply(lambda row: row["properties"]["valuePerSqm"])
-        df["growth"] = json["features"].apply(lambda row: row["properties"]["growth"])
-        df["fill_color"] = json["features"].apply(lambda row: color_scale(row["properties"]["growth"]))
+        df["crop"] = json["features"].apply(lambda row: row["properties"]["crop"])
+        df["yield"] = json["features"].apply(lambda row: row["properties"]["yield"])
+        df["fill_color"] = json["features"].apply(lambda row: color_scale(row["properties"]["yield"]))
 
         LAND_COVER = [[[-123.0, 49.196], [-123.0, 49.324],[-123.306, 49.324], [-123.306, 49.196]]]
 
         ALL_LAYERS = {
             "Area hydrologic": pdk.Layer(
                 "PolygonLayer",
-                data=LAND_COVER,
-                stroked=False,
-                # processes the data as a flat longitude-latitude pair
-                get_polygon="-",
-                get_fill_color=[0, 0, 0, 20],
+                data=df,
+                id="geojson",
+                opacity=0.8,
+                stroked=True,
+                get_polygon="coordinates",
+                filled=True,
+                extruded=False,
+                wireframe=True,
+                get_fill_color="fill_color",
+                get_line_color=[255, 255, 255],
+                auto_highlight=False,
+                pickable=False,
             )
         }
         st.sidebar.markdown("### Select Crop")
@@ -87,11 +95,11 @@ def mapping_demo():
         if selected_layers:
             st.pydeck_chart(
                 pdk.Deck(
-                    map_style="mapbox://styles/mapbox/light-v9",
+                    map_style="mapbox://styles/mapbox/satellite-v9",
                     initial_view_state={
-                        "latitude": 49.254, 
-                        "longitude": -123.13,
-                        "zoom": 11
+                        "latitude": 37.574821,
+                        "longitude": -5.857086,
+                        "zoom": 13
                     },
                     layers=selected_layers,
                 )
