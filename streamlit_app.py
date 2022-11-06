@@ -116,15 +116,13 @@ def mapping_demo():
         )
 
 
-st.set_page_config(page_title="Cropernicus Dashboard", page_icon="🌍")
-st.markdown("# Cropernicus Dashboard")
+st.set_page_config(page_title="Cropernicus Dashboard", page_icon="🌍", layout="wide")
+#st.markdown("# Cropernicus Dashboard")
 image = Image.open('img/logo.png')
 
-st.image(image, caption='Logo')
+st.image(image)
 st.write(
-    """This demo shows how to use the agroboad terminal to check for crop predictions over time. It uses the
-[`st.pydeck_chart`](https://docs.streamlit.io/library/api-reference/charts/st.pydeck_chart)
-to display geospatial data."""
+    """This demo shows how to use the agroboad terminal to check for crop predictions over time."""
 )
 
 mapping_demo()
