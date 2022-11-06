@@ -1,3 +1,4 @@
+from PIL import Image
 import inspect
 import textwrap
 from urllib.error import URLError
@@ -5,7 +6,6 @@ from urllib.error import URLError
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
-
 
 # def show_code(demo):
 #     """Show the code of the demo."""
@@ -24,64 +24,58 @@ def mapping_demo():
         #     "http://raw.githubusercontent.com/streamlit/"
         #     "example-data/master/hello/v1/%s" % filename
         # )
-        CATTLE_DATA = "https://raw.githubusercontent.com/ajduberstein/geo_datasets/master/nm_cattle.csv"
-        cattle_df = pd.read_csv(CATTLE_DATA, header=None)
+        DATA_URL = "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/geojson/vancouver-blocks.json"
+        json = pd.read_json(DATA_URL)
 
-        return cattle_df #pd.read_json(url)
+        return json
 
     try:
 
-        data = from_data_file()
-
-        HEADER = ["lng", "lat", "weight"]
-        data.columns = HEADER
-
-        #view = pdk.data_utils.compute_view(data[["lng", "lat"]])
-        p75, p90, p99 = data["weight"].quantile([0.75, 0.9, 0.99])
-
-        STROKE_WIDTH = 5
-        CELL_SIZE = 3000
-
-        CONTOURS_0 = [
-            {"threshold": p75, "color": [
-                0, 238, 224], "strokeWidth": STROKE_WIDTH},
-            {"threshold": p90, "color": [
-                0, 180, 240], "strokeWidth": STROKE_WIDTH},
-            {"threshold": p99, "color": [0, 0, 240],
-                "strokeWidth": STROKE_WIDTH},
+        # Custom color scale
+        COLOR_RANGE = [
+            [65, 182, 196],
+            [127, 205, 187],
+            [199, 233, 180],
+            [237, 248, 177],
+            [255, 255, 204],
+            [255, 237, 160],
+            [254, 217, 118],
+            [254, 178, 76],
+            [253, 141, 60],
+            [252, 78, 42],
+            [227, 26, 28],
+            [189, 0, 38],
+            [128, 0, 38],
         ]
 
+        BREAKS = [-0.6, -0.45, -0.3, -0.15, 0, 0.15,
+                0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2]
+
+
+        def color_scale(val):
+            for i, b in enumerate(BREAKS):
+                if val < b:
+                    return COLOR_RANGE[i]
+            return COLOR_RANGE[i]
+
+        json = from_data_file()
+        df = pd.DataFrame()
+        # Parse the geometry out in Pandas
+        df["coordinates"] = json["features"].apply(lambda row: row["geometry"]["coordinates"])
+        df["valuePerSqm"] = json["features"].apply(lambda row: row["properties"]["valuePerSqm"])
+        df["growth"] = json["features"].apply(lambda row: row["properties"]["growth"])
+        df["fill_color"] = json["features"].apply(lambda row: color_scale(row["properties"]["growth"]))
+
+        LAND_COVER = [[[-123.0, 49.196], [-123.0, 49.324],[-123.306, 49.324], [-123.306, 49.196]]]
 
         ALL_LAYERS = {
             "Area hydrologic": pdk.Layer(
-                "ContourLayer",
-                data=data,
-                get_position=["lng", "lat"],
-                contours=CONTOURS_0,
-                cell_size=CELL_SIZE,
-                aggregation=pdk.types.String("MEAN"),
-                get_weight="weight",
-                pickable=True,
-            ),
-            "Rice": pdk.Layer(
-                "ContourLayer",
-                data=data,
-                get_position=["lng", "lat"],
-                contours=CONTOURS_0,
-                cell_size=CELL_SIZE,
-                aggregation=pdk.types.String("MEAN"),
-                get_weight="weight",
-                pickable=True,
-            ),
-            "Corn": pdk.Layer(
-                "ContourLayer",
-                data=data,
-                get_position=["lng", "lat"],
-                contours=CONTOURS_0,
-                cell_size=CELL_SIZE,
-                aggregation=pdk.types.String("MEAN"),
-                get_weight="weight",
-                pickable=True,
+                "PolygonLayer",
+                data=LAND_COVER,
+                stroked=False,
+                # processes the data as a flat longitude-latitude pair
+                get_polygon="-",
+                get_fill_color=[0, 0, 0, 20],
             )
         }
         st.sidebar.markdown("### Select Crop")
@@ -95,9 +89,9 @@ def mapping_demo():
                 pdk.Deck(
                     map_style="mapbox://styles/mapbox/light-v9",
                     initial_view_state={
-                        "latitude": 35,
-                        "longitude": -106,
-                        "zoom": 5
+                        "latitude": 49.254, 
+                        "longitude": -123.13,
+                        "zoom": 11
                     },
                     layers=selected_layers,
                 )
@@ -115,7 +109,10 @@ def mapping_demo():
 
 
 st.set_page_config(page_title="Cropernicus Dashboard", page_icon="🌍")
-st.markdown("# Agroboard")
+st.markdown("# Cropernicus Dashboard")
+image = Image.open('img/logo.png')
+
+st.image(image, caption='Logo')
 st.write(
     """This demo shows how to use the agroboad terminal to check for crop predictions over time. It uses the
 [`st.pydeck_chart`](https://docs.streamlit.io/library/api-reference/charts/st.pydeck_chart)
